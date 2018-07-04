@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pns.sgdg.annotation.CheckPermission;
 import com.pns.sgdg.common.constant.Constant;
 import com.pns.sgdg.dao.CustomerDAO;
 import com.pns.sgdg.dao.CustomerInfoDAO;
@@ -75,6 +76,7 @@ public class CustomerWS {
 
 	@ResponseBody
 	@RequestMapping("/login")
+	@CheckPermission(role = Constant.Role.CUSTOMER)
 	public Object search(@RequestParam("loginId") String loginId, @RequestParam("password") String password,
 			HttpServletRequest request, HttpServletResponse response) throws IOException, NoSuchAlgorithmException {
 		Customer customer = new Customer();

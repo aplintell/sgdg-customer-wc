@@ -8,15 +8,16 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.yaml.snakeyaml.util.ArrayUtils;
 
 import com.mysql.jdbc.Statement;
 import com.pns.sgdg.annotation.Column;
@@ -303,31 +304,31 @@ public class BaseDAO<T extends BaseEntity> {
 			valueSqlStr.append(" VALUE(");
 			Field[] baseFields = clazz.getDeclaredFields();
 			Field[] superFields = clazz.getSuperclass().getDeclaredFields();
-			List<Field> fields = ArrayUtils.toUnmodifiableCompositeList(baseFields, superFields);
+			Field[] fields = Stream.of(baseFields, superFields).flatMap(Stream::of).toArray(Field[]::new);
 			List<Object> parameters = new ArrayList<>();
 			boolean isFirstField = false;
-			for (int i = 0; i < fields.size(); i++) {
-				fields.get(i).setAccessible(true);
-				if (!fields.get(i).isAnnotationPresent(Key.class)) {
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				if (!fields[i].isAnnotationPresent(Key.class)) {
 					if (!isFirstField) {
-						sqlStr.append(fields.get(i).getAnnotation(Column.class).name());
+						sqlStr.append(fields[i].getAnnotation(Column.class).name());
 						valueSqlStr.append("?");
 						isFirstField = true;
 					} else {
-						sqlStr.append(",").append(fields.get(i).getAnnotation(Column.class).name());
+						sqlStr.append(",").append(fields[i].getAnnotation(Column.class).name());
 						valueSqlStr.append(",").append("?");
 					}
-					parameters.add(fields.get(i).get(t));
-				} else if (!fields.get(i).getAnnotation(Key.class).isAI()) {
+					parameters.add(fields[i].get(t));
+				} else if (!fields[i].getAnnotation(Key.class).isAI()) {
 					if (!isFirstField) {
-						sqlStr.append(fields.get(i).getAnnotation(Key.class).name());
+						sqlStr.append(fields[i].getAnnotation(Key.class).name());
 						valueSqlStr.append("?");
 						isFirstField = true;
 					} else {
-						sqlStr.append(",").append(fields.get(i).getAnnotation(Key.class).name());
+						sqlStr.append(",").append(fields[i].getAnnotation(Key.class).name());
 						valueSqlStr.append(",").append("?");
 					}
-					parameters.add(fields.get(i).get(t));
+					parameters.add(fields[i].get(t));
 				}
 
 			}
@@ -339,6 +340,79 @@ public class BaseDAO<T extends BaseEntity> {
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 			return false;
+		}
+	}
+
+	public void create(List<T> list) {
+		try {
+			clazz = getConcreteClass();
+			Table table = clazz.getAnnotation(Table.class);
+
+			// Build SQL Query
+			StringBuffer sqlStr = new StringBuffer();
+			sqlStr.append("INSERT INTO ");
+			sqlStr.append(table.name()).append("(");
+
+			StringBuffer valueSqlStr = new StringBuffer();
+			valueSqlStr.append(" VALUE(");
+			Field[] baseFields = clazz.getDeclaredFields();
+			Field[] superFields = clazz.getSuperclass().getDeclaredFields();
+			Field[] fields = Stream.of(baseFields, superFields).flatMap(Stream::of).toArray(Field[]::new);
+
+			boolean isFirstField = false;
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				if (!fields[i].isAnnotationPresent(Key.class)) {
+					if (!isFirstField) {
+						sqlStr.append(fields[i].getAnnotation(Column.class).name());
+						valueSqlStr.append("?");
+						isFirstField = true;
+					} else {
+						sqlStr.append(",").append(fields[i].getAnnotation(Column.class).name());
+						valueSqlStr.append(",").append("?");
+					}
+				} else if (!fields[i].getAnnotation(Key.class).isAI()) {
+					if (!isFirstField) {
+						sqlStr.append(fields[i].getAnnotation(Key.class).name());
+						valueSqlStr.append("?");
+						isFirstField = true;
+					} else {
+						sqlStr.append(",").append(fields[i].getAnnotation(Key.class).name());
+						valueSqlStr.append(",").append("?");
+					}
+				}
+			}
+			valueSqlStr.append(")");
+			sqlStr.append(")");
+			sqlStr.append(valueSqlStr);
+
+			jdbc.batchUpdate(sqlStr.toString(), new BatchPreparedStatementSetter() {
+
+				@Override
+				public void setValues(PreparedStatement ps, int i) throws SQLException {
+					int start = 0;
+					int pos = 1;
+					if (fields[0].getAnnotation(Key.class).isAI()) {
+						start++;
+					}
+					for (int j = start; j < fields.length; j++) {
+						try {
+							ps.setObject(pos, fields[j].get(list.get(i)));
+							pos++;
+						} catch (IllegalArgumentException | IllegalAccessException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+
+				@Override
+				public int getBatchSize() {
+					return list.size();
+				}
+			});
+
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -357,23 +431,23 @@ public class BaseDAO<T extends BaseEntity> {
 			whereSqlStr.append(" WHERE ");
 			Field[] baseFields = clazz.getDeclaredFields();
 			Field[] superFields = clazz.getSuperclass().getDeclaredFields();
-			List<Field> fields = ArrayUtils.toUnmodifiableCompositeList(baseFields, superFields);
+			Field[] fields = Stream.of(baseFields, superFields).flatMap(Stream::of).toArray(Field[]::new);
 			List<Object> parameters = new ArrayList<>();
 			Object id = null;
 			boolean isFirstField = false;
-			for (int i = 0; i < fields.size(); i++) {
-				fields.get(i).setAccessible(true);
-				if (fields.get(i).isAnnotationPresent(Key.class)) {
-					id = fields.get(i).get(t);
-					whereSqlStr.append(fields.get(i).getAnnotation(Key.class).name()).append(" = ?");
-				} else if (!fields.get(i).getAnnotation(Column.class).ignoreUpdate()) {
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				if (fields[i].isAnnotationPresent(Key.class)) {
+					id = fields[i].get(t);
+					whereSqlStr.append(fields[i].getAnnotation(Key.class).name()).append(" = ?");
+				} else if (!fields[i].getAnnotation(Column.class).ignoreUpdate()) {
 					if (!isFirstField) {
-						sqlStr.append(fields.get(i).getAnnotation(Column.class).name()).append(" = ?");
+						sqlStr.append(fields[i].getAnnotation(Column.class).name()).append(" = ?");
 						isFirstField = true;
 					} else {
-						sqlStr.append(",").append(fields.get(i).getAnnotation(Column.class).name()).append(" = ?");
+						sqlStr.append(",").append(fields[i].getAnnotation(Column.class).name()).append(" = ?");
 					}
-					parameters.add(fields.get(i).get(t));
+					parameters.add(fields[i].get(t));
 				}
 			}
 			parameters.add(id);
@@ -428,31 +502,31 @@ public class BaseDAO<T extends BaseEntity> {
 			valueSqlStr.append(" VALUE(");
 			Field[] baseFields = clazz.getDeclaredFields();
 			Field[] superFields = clazz.getSuperclass().getDeclaredFields();
-			List<Field> fields = ArrayUtils.toUnmodifiableCompositeList(baseFields, superFields);
+			Field[] fields = Stream.of(baseFields, superFields).flatMap(Stream::of).toArray(Field[]::new);
 			List<Object> parameters = new ArrayList<>();
 			boolean isFirstField = false;
-			for (int i = 0; i < fields.size(); i++) {
-				fields.get(i).setAccessible(true);
-				if (!fields.get(i).isAnnotationPresent(Key.class)) {
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				if (!fields[i].isAnnotationPresent(Key.class)) {
 					if (!isFirstField) {
-						sqlStr.append(fields.get(i).getAnnotation(Column.class).name());
+						sqlStr.append(fields[i].getAnnotation(Column.class).name());
 						valueSqlStr.append("?");
 						isFirstField = true;
 					} else {
-						sqlStr.append(",").append(fields.get(i).getAnnotation(Column.class).name());
+						sqlStr.append(",").append(fields[i].getAnnotation(Column.class).name());
 						valueSqlStr.append(",").append("?");
 					}
-					parameters.add(fields.get(i).get(t));
-				} else if (!fields.get(i).getAnnotation(Key.class).isAI()) {
+					parameters.add(fields[i].get(t));
+				} else if (!fields[i].getAnnotation(Key.class).isAI()) {
 					if (!isFirstField) {
-						sqlStr.append(fields.get(i).getAnnotation(Key.class).name());
+						sqlStr.append(fields[i].getAnnotation(Key.class).name());
 						valueSqlStr.append("?");
 						isFirstField = true;
 					} else {
-						sqlStr.append(",").append(fields.get(i).getAnnotation(Key.class).name());
+						sqlStr.append(",").append(fields[i].getAnnotation(Key.class).name());
 						valueSqlStr.append(",").append("?");
 					}
-					parameters.add(fields.get(i).get(t));
+					parameters.add(fields[i].get(t));
 				}
 
 			}
