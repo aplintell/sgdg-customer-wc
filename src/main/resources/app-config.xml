@@ -15,4 +15,7 @@
     </bean>
     <bean id="permissionAspect" class="com.pns.sgdg.aop.PermissionAspect" >
     </bean>
+    
+     <bean id="configureValueProvider" class="com.pns.sgdg.utility.ConfigureValueProvider" >
+    </bean>
 </beans>

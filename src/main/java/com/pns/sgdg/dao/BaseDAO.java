@@ -271,7 +271,7 @@ public class BaseDAO<T extends BaseEntity> {
 		}
 	}
 
-	public T get(int id) {
+	public T get(long id) {
 		clazz = getConcreteClass();
 		Key key = null;
 		for (Field field : clazz.getDeclaredFields()) {
@@ -411,6 +411,71 @@ public class BaseDAO<T extends BaseEntity> {
 				}
 			});
 
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void update(List<T> list) {
+		try {
+			clazz = getConcreteClass();
+			Table table = clazz.getAnnotation(Table.class);
+
+			// Build SQL Query
+			StringBuffer sqlStr = new StringBuffer();
+			sqlStr.append("UPDATE ");
+			sqlStr.append(table.name());
+			sqlStr.append(" SET ");
+
+			StringBuffer whereSqlStr = new StringBuffer();
+			whereSqlStr.append(" WHERE ");
+			Field[] baseFields = clazz.getDeclaredFields();
+			Field[] superFields = clazz.getSuperclass().getDeclaredFields();
+			Field[] fields = Stream.of(baseFields, superFields).flatMap(Stream::of).toArray(Field[]::new);
+			boolean isFirstField = false;
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				if (fields[i].isAnnotationPresent(Key.class)) {
+					whereSqlStr.append(fields[i].getAnnotation(Key.class).name()).append(" = ?");
+				} else if (!fields[i].getAnnotation(Column.class).ignoreUpdate()) {
+					if (!isFirstField) {
+						sqlStr.append(fields[i].getAnnotation(Column.class).name()).append(" = ?");
+						isFirstField = true;
+					} else {
+						sqlStr.append(",").append(fields[i].getAnnotation(Column.class).name()).append(" = ?");
+					}
+				}
+			}
+			sqlStr.append(whereSqlStr);
+
+			jdbc.batchUpdate(sqlStr.toString(), new BatchPreparedStatementSetter() {
+
+				@Override
+				public void setValues(PreparedStatement ps, int i) throws SQLException {
+					try {
+						int totalIgnore = 0;
+						int pos = 1;
+						for (int j = 1; j < fields.length; j++) {
+							if (fields[j].getAnnotation(Column.class).ignoreUpdate()) {
+								totalIgnore++;
+								System.out.println(fields[j].getAnnotation(Column.class).name() + " :" + totalIgnore);
+							} else {
+								ps.setObject(pos, fields[j].get(list.get(i)));
+								pos++;
+							}
+						}
+						System.out.println("fields.length - totalIgnore" + fields.length + " - " + totalIgnore);
+						ps.setObject(fields.length - totalIgnore, fields[0].get(list.get(i)));
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+					}
+				}
+
+				@Override
+				public int getBatchSize() {
+					return list.size();
+				}
+			});
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		}

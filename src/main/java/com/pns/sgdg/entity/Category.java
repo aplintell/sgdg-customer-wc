@@ -13,11 +13,22 @@ public class Category extends BaseEntity {
 	@Column(name = "name")
 	private String name;
 
+	@Column(name = "parsing_url")
+	private String parsingUrl;
+
 	@Column(name = "priority")
 	private int priority;
 
 	@Column(name = "status")
 	private String status;
+
+	public String getParsingUrl() {
+		return parsingUrl;
+	}
+
+	public void setParsingUrl(String parsingUrl) {
+		this.parsingUrl = parsingUrl;
+	}
 
 	public int getCategoryId() {
 		return categoryId;
