@@ -13,7 +13,6 @@ public class CustomerDAO extends BaseDAO<Customer> {
 	public Me getMe(long customerId) {
 		return jdbc.queryForObject(ResourceUtil.getResouce("get-me"), new BeanPropertyRowMapper<>(Me.class),
 				customerId);
-
 	}
 
 }
