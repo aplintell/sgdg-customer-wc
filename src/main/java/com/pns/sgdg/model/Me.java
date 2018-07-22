@@ -1,20 +1,18 @@
 package com.pns.sgdg.model;
 
-import java.util.List;
-
 public class Me {
 
-	private long customerId;
+	private long id;
 	private String name;
-	private List<Long> permissions;
+	private String permissions;
 	private String status;
 
-	public long getCustomerId() {
-		return customerId;
+	public long getId() {
+		return id;
 	}
 
-	public void setCustomerId(long customerId) {
-		this.customerId = customerId;
+	public void setId(long id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -25,11 +23,11 @@ public class Me {
 		this.name = name;
 	}
 
-	public List<Long> getPermissions() {
+	public String getPermissions() {
 		return permissions;
 	}
 
-	public void setPermissions(List<Long> permissions) {
+	public void setPermissions(String permissions) {
 		this.permissions = permissions;
 	}
 

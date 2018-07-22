@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -19,7 +20,6 @@ import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 
-import com.mysql.jdbc.Statement;
 import com.pns.sgdg.annotation.Column;
 import com.pns.sgdg.annotation.Key;
 import com.pns.sgdg.annotation.Table;
@@ -37,7 +37,8 @@ public class BaseDAO<T extends BaseEntity> {
 	public List<T> getAll() {
 		clazz = getConcreteClass();
 		Table table = clazz.getAnnotation(Table.class);
-		return jdbc.query(String.format("SELECT * FROM %s", table.name()), new BeanPropertyRowMapper<>(clazz));
+		return jdbc.query(String.format("SELECT * FROM %s WHERE is_del = 0", table.name()),
+				new BeanPropertyRowMapper<>(clazz));
 	}
 
 	/*
@@ -52,7 +53,7 @@ public class BaseDAO<T extends BaseEntity> {
 			StringBuffer sqlStr = new StringBuffer();
 			sqlStr.append("SELECT * FROM ");
 			sqlStr.append(table.name());
-			sqlStr.append(" WHERE ");
+			sqlStr.append(" WHERE is_del = 0 AND ");
 			boolean isFirstField = false;
 			Field[] fields = clazz.getDeclaredFields();
 			List<Object> parameters = new ArrayList<>();
@@ -111,7 +112,7 @@ public class BaseDAO<T extends BaseEntity> {
 			StringBuffer sqlStr = new StringBuffer();
 			sqlStr.append("SELECT * FROM ");
 			sqlStr.append(table.name());
-			sqlStr.append(" WHERE ");
+			sqlStr.append(" WHERE is_del = 0 AND ");
 			boolean isFirstField = false;
 			Field[] fields = clazz.getDeclaredFields();
 			List<Object> parameters = new ArrayList<>();
@@ -165,7 +166,7 @@ public class BaseDAO<T extends BaseEntity> {
 			StringBuffer sqlStr = new StringBuffer();
 			sqlStr.append("SELECT * FROM ");
 			sqlStr.append(table.name());
-			sqlStr.append(" WHERE ");
+			sqlStr.append(" WHERE is_del = 0 AND ");
 			boolean isFirstField = false;
 			Field[] fields = clazz.getDeclaredFields();
 			List<Object> parameters = new ArrayList<>();
@@ -195,10 +196,11 @@ public class BaseDAO<T extends BaseEntity> {
 					parameters.add(fields[i].get(t));
 					parameters.add(fields[i].get(t));
 				} else {
-					sqlStr.append("(");
+					sqlStr.append("(? is null OR ");
 					sqlStr.append(fields[i].isAnnotationPresent(Key.class) ? fields[i].getAnnotation(Key.class).name()
 							: fields[i].getAnnotation(Column.class).name());
 					sqlStr.append(" = ?)");
+					parameters.add(fields[i].get(t));
 					parameters.add(fields[i].get(t));
 				}
 
@@ -214,7 +216,7 @@ public class BaseDAO<T extends BaseEntity> {
 		}
 	}
 
-	public int findCountPage(T t) {
+	public int findCount(T t) {
 		try {
 			clazz = getConcreteClass();
 			Table table = clazz.getAnnotation(Table.class);
@@ -223,7 +225,7 @@ public class BaseDAO<T extends BaseEntity> {
 			StringBuffer sqlStr = new StringBuffer();
 			sqlStr.append("SELECT COUNT(*) FROM ");
 			sqlStr.append(table.name());
-			sqlStr.append(" WHERE ");
+			sqlStr.append(" WHERE is_del = 0 AND");
 			boolean isFirstField = false;
 			Field[] fields = clazz.getDeclaredFields();
 			List<Object> parameters = new ArrayList<>();
@@ -253,18 +255,18 @@ public class BaseDAO<T extends BaseEntity> {
 					parameters.add(fields[i].get(t));
 					parameters.add(fields[i].get(t));
 				} else {
-					sqlStr.append("(");
+					sqlStr.append("(? is null OR ");
 					sqlStr.append(fields[i].isAnnotationPresent(Key.class) ? fields[i].getAnnotation(Key.class).name()
 							: fields[i].getAnnotation(Column.class).name());
 					sqlStr.append(" = ?)");
+					parameters.add(fields[i].get(t));
 					parameters.add(fields[i].get(t));
 				}
 
 			}
 			int totalRecords = jdbc.queryForObject(sqlStr.toString(), parameters.toArray(new Object[parameters.size()]),
 					Integer.class);
-			return totalRecords % Constant.SQL.LIMIT_PER_PAGE > 0 ? totalRecords / Constant.SQL.LIMIT_PER_PAGE + 1
-					: totalRecords / Constant.SQL.LIMIT_PER_PAGE;
+			return totalRecords;
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 			return -1;
@@ -282,7 +284,8 @@ public class BaseDAO<T extends BaseEntity> {
 		}
 		Table table = clazz.getAnnotation(Table.class);
 		try {
-			return jdbc.queryForObject(String.format("SELECT * FROM %s WHERE %s = ?", table.name(), key.name()),
+			return jdbc.queryForObject(
+					String.format("SELECT * FROM %s WHERE %s = ? AND is_del = 0", table.name(), key.name()),
 					new BeanPropertyRowMapper<>(clazz), id);
 		} catch (EmptyResultDataAccessException e) {
 			return null;
@@ -525,7 +528,7 @@ public class BaseDAO<T extends BaseEntity> {
 		}
 	}
 
-	public boolean delete(T t) {
+	public boolean deletePermanent(T t) {
 		try {
 			clazz = getConcreteClass();
 			Table table = clazz.getAnnotation(Table.class);
@@ -548,6 +551,37 @@ public class BaseDAO<T extends BaseEntity> {
 			jdbc.update(sqlStr.toString(), parameters.toArray(new Object[parameters.size()]));
 			return true;
 		} catch (IllegalArgumentException | IllegalAccessException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean delete(T t) {
+		try {
+			clazz = getConcreteClass();
+			Table table = clazz.getAnnotation(Table.class);
+
+			// Build SQL Query
+			StringBuffer sqlStr = new StringBuffer();
+			sqlStr.append("UPDATE ");
+			sqlStr.append(table.name());
+			sqlStr.append(" SET is_del = 1, updated_by = ? WHERE ");
+			List<Object> parameters = new ArrayList<>();
+			Field updatedByField = clazz.getSuperclass().getDeclaredField("updatedBy");
+			updatedByField.setAccessible(true);
+			parameters.add(updatedByField.get(t));
+			Field[] fields = clazz.getDeclaredFields();
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				if (fields[i].isAnnotationPresent(Key.class)) {
+					sqlStr.append(fields[i].getAnnotation(Key.class).name()).append(" = ? ");
+					parameters.add(fields[i].get(t));
+					break;
+				}
+			}
+			jdbc.update(sqlStr.toString(), parameters.toArray(new Object[parameters.size()]));
+			return true;
+		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
 			e.printStackTrace();
 			return false;
 		}

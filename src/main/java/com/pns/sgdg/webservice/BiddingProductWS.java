@@ -106,10 +106,14 @@ public class BiddingProductWS {
 	public Object save(@RequestParam("id") long id) {
 		BiddingProduct product = biddingProductDAO.get(id);
 		Category category = categoryDAO.get(product.getCategoryId());
+		Image image = new Image();
+		image.setBiddingProductId(id);
+		List<Image> images = imageDAO.find(image);
 		Map<String, Object> map = new HashMap<>();
 		map.put("product", product);
 		map.put("category", category);
 		map.put("imageUrl", imageUrl);
+		map.put("images", images);
 		return map;
 	}
 

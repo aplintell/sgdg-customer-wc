@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,11 +20,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pns.sgdg.annotation.CheckPermission;
 import com.pns.sgdg.common.constant.Constant;
 import com.pns.sgdg.dao.CustomerDAO;
 import com.pns.sgdg.dao.CustomerInfoDAO;
 import com.pns.sgdg.entity.Customer;
 import com.pns.sgdg.entity.CustomerInfo;
+import com.pns.sgdg.model.CustomerBO;
 import com.pns.sgdg.model.Me;
 import com.pns.sgdg.security.MD5;
 import com.pns.sgdg.security.UserSession;
@@ -39,6 +42,21 @@ public class CustomerWS {
 	CustomerInfoDAO customerInfoDAO;
 	@Autowired
 	UserSession userSession;
+
+	@RequestMapping("/search")
+	@CheckPermission(permission = { Constant.Permission.VIEW_CUSTOMER_MANAGEMENT })
+	public Object search(@RequestParam("firstName") String firstName, @RequestParam("lastName") String lastName,
+			@RequestParam("loginId") String loginId, @RequestParam("email") String email,
+			@RequestParam("page") int page) {
+		return customerDAO.find(firstName, lastName, loginId, email, page);
+	}
+
+	@RequestMapping("/{id}")
+	@CheckPermission(permission = { Constant.Permission.SAVE_CUSTOMER_MANAGEMENT })
+	public Object getToptic(@PathVariable(value = "id") int id) {
+		CustomerBO customer = customerDAO.getById(id);
+		return customer;
+	}
 
 	@RequestMapping(value = "/isLoginIdExist")
 	public boolean isLoginIdExist(@RequestParam("loginId") String loginId) {

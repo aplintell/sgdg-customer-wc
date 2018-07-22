@@ -12,4 +12,6 @@ public @interface Column {
 	String name();
 
 	boolean ignoreUpdate() default false;
+
+	boolean ignoreSearch() default false;
 }

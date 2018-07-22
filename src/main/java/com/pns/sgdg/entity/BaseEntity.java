@@ -18,6 +18,17 @@ public class BaseEntity {
 	@Column(name = "updated_by")
 	private String updatedBy = "SYSTEM";
 
+	@Column(name = "is_del")
+	private int isDel = 0;
+
+	public int getIsDel() {
+		return isDel;
+	}
+
+	public void setIsDel(int isDel) {
+		this.isDel = isDel;
+	}
+
 	public Date getCreatedTime() {
 		return createdTime;
 	}

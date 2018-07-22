@@ -22,7 +22,7 @@ public class CookieUtil {
 			Cookie cookies[] = request.getCookies();
 			if (cookies != null) {
 				for (Cookie cookie : cookies) {
-					if (cookie.getName().equals(Constant.Cookie.CUSTOMER_COOKIE)) {
+					if (cookie.getName().equals(Constant.Cookie.USER_COOKIE)) {
 						encryptString = cookie.getValue();
 					}
 				}

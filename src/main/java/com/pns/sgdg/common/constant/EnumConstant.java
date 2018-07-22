@@ -11,7 +11,7 @@ public class EnumConstant {
 	}
 
 	public static enum UserStatus {
-		ACTIVE, INACTIVE
+		ACTIVE, INACTIVE, BLOCK
 	}
 
 	public static enum CustomerStatus {
