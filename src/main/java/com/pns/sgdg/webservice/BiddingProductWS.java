@@ -22,8 +22,8 @@ import com.pns.sgdg.dao.BiddingProductDAO;
 import com.pns.sgdg.dao.CategoryDAO;
 import com.pns.sgdg.dao.ImageDAO;
 import com.pns.sgdg.entity.BiddingProduct;
+import com.pns.sgdg.entity.BiddingProductImage;
 import com.pns.sgdg.entity.Category;
-import com.pns.sgdg.entity.Image;
 import com.pns.sgdg.security.UserSession;
 import com.pns.sgdg.utility.Utility;
 
@@ -31,9 +31,9 @@ import com.pns.sgdg.utility.Utility;
 @RequestMapping("/bidding-product")
 public class BiddingProductWS {
 
-	@DBConfig(value = "image.url")
+	@DBConfig(value = "bidding.product.image.url")
 	String imageUrl;
-	@DBConfig(value = "upload.image.dir")
+	@DBConfig(value = "bidding.product.upload.image.dir")
 	String imageUploadLocation;
 
 	@Autowired
@@ -47,12 +47,11 @@ public class BiddingProductWS {
 
 	@RequestMapping("/upload")
 	public Object upload(@RequestParam("file[]") MultipartFile[] file) throws IllegalStateException, IOException {
-		System.out.println(file.length);
 		int count = 0;
 		String fileName;
 		List<String> fileNames = new ArrayList<>();
-		Image image;
-		List<Image> images = new ArrayList<>();
+		BiddingProductImage image;
+		List<BiddingProductImage> images = new ArrayList<>();
 		String extension = "";
 		int i;
 
@@ -69,7 +68,7 @@ public class BiddingProductWS {
 			File convFile = new File(imageUploadLocation + fileName);
 			multipartFile.transferTo(convFile);
 			count++;
-			image = new Image();
+			image = new BiddingProductImage();
 			image.setName(fileName);
 			images.add(image);
 		}
@@ -87,10 +86,10 @@ public class BiddingProductWS {
 		BiddingProduct biddingProduct = new BiddingProduct(name, Utility.toUrlFriendly(name), initialPrice, priceStep,
 				description, "", "", formatter.parse(startDate), formatter.parse(endDate), 0);
 		long id = biddingProductDAO.createReturnID(biddingProduct);
-		List<Image> list = new ArrayList<>();
-		Image image;
+		List<BiddingProductImage> list = new ArrayList<>();
+		BiddingProductImage image;
 		for (String imageName : imageNames) {
-			image = new Image();
+			image = new BiddingProductImage();
 			image.setName(imageName);
 			image = imageDAO.find(image).get(0);
 			image.setBiddingProductId(id);
@@ -106,9 +105,9 @@ public class BiddingProductWS {
 	public Object save(@RequestParam("id") long id) {
 		BiddingProduct product = biddingProductDAO.get(id);
 		Category category = categoryDAO.get(product.getCategoryId());
-		Image image = new Image();
+		BiddingProductImage image = new BiddingProductImage();
 		image.setBiddingProductId(id);
-		List<Image> images = imageDAO.find(image);
+		List<BiddingProductImage> images = imageDAO.find(image);
 		Map<String, Object> map = new HashMap<>();
 		map.put("product", product);
 		map.put("category", category);

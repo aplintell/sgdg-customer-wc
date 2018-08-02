@@ -25,11 +25,10 @@ public class Brand extends BaseEntity {
 	public Brand() {
 	}
 
-	public Brand(int brandId, String name, byte[] image, int priority, String status) {
+	public Brand(int brandId, String name, int priority, String status) {
 		super();
 		this.brandId = brandId;
 		this.name = name;
-		this.image = image;
 		this.priority = priority;
 		this.status = status;
 	}

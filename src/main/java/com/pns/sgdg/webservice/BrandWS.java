@@ -47,15 +47,23 @@ public class BrandWS {
 
 	@RequestMapping("/save")
 	@CheckPermission(permission = { Constant.Permission.SAVE_BRAND_MANAGEMENT })
-	public Object saveTopic(@RequestParam("image") MultipartFile image, @RequestParam("brandId") int brandId,
-			@RequestParam("name") String name, @RequestParam("priority") int priority,
-			@RequestParam("status") String status) throws NoSuchAlgorithmException, IOException {
-		Brand brand = new Brand(brandId, name, image.getBytes(), priority, status);
+	public Object saveTopic(@RequestParam(value = "image", required = false) MultipartFile image,
+			@RequestParam("brandId") int brandId, @RequestParam("name") String name,
+			@RequestParam("priority") int priority, @RequestParam("status") String status)
+			throws NoSuchAlgorithmException, IOException {
+
+		Brand brand = new Brand(brandId, name, priority, status);
+		if (image != null) {
+			brand.setImage(image.getBytes());
+		}
 		brand.setUpdatedBy(userSession.getLoginId());
 		if (brandId == 0) {
 			brand.setCreatedBy(userSession.getLoginId());
 			return brandDAO.create(brand);
 		} else {
+			if (image == null) {
+				brand.setImage(brandDAO.get(brandId).getImage());
+			}
 			return brandDAO.update(brand);
 		}
 

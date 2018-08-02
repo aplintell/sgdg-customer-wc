@@ -11,7 +11,7 @@ public class EnumConstant {
 	}
 
 	public static enum UserStatus {
-		ACTIVE, INACTIVE, BLOCK
+		ACTIVE, INACTIVE
 	}
 
 	public static enum CustomerStatus {
@@ -20,5 +20,9 @@ public class EnumConstant {
 
 	public static enum CategoryStatus {
 		ACTIVE, INACTIVE
+	}
+
+	public static enum Gender {
+		MALE, FEMALE, OTHER
 	}
 }

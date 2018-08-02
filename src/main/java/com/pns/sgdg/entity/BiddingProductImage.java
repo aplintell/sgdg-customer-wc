@@ -4,8 +4,8 @@ import com.pns.sgdg.annotation.Column;
 import com.pns.sgdg.annotation.Key;
 import com.pns.sgdg.annotation.Table;
 
-@Table(name = "image")
-public class Image extends BaseEntity {
+@Table(name = "bidding_product_image")
+public class BiddingProductImage extends BaseEntity {
 
 	@Key(isAI = true, name = "image_id")
 	private long imageId;

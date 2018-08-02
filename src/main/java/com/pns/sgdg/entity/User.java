@@ -1,5 +1,7 @@
 package com.pns.sgdg.entity;
 
+import java.util.Date;
+
 import com.pns.sgdg.annotation.Column;
 import com.pns.sgdg.annotation.Key;
 import com.pns.sgdg.annotation.Table;
@@ -32,15 +34,66 @@ public class User extends BaseEntity {
 	@Column(name = "first_name")
 	private String firstName;
 
+	@Column(name = "gender")
+	private String gender;
+
+	@Column(name = "phone")
+	private String phone;
+
 	@Column(name = "email")
 	private String email;
 
-	public String getSalt() {
-		return salt;
+	@Column(name = "dob")
+	private Date dob;
+
+	@Column(name = "address")
+	private String address;
+
+	@Column(name = "avatar")
+	private String avatar;
+
+	@Column(name = "front_id_card")
+	private String frontIdCard;
+
+	@Column(name = "back_id_card")
+	private String backIdCard;
+
+	public User() {
 	}
 
-	public void setSalt(String salt) {
-		this.salt = salt;
+	public User(long userId, String loginId, String status, int roleId, String lastName, String firstName,
+			String gender, String phone, String email, Date dob, String address, String avatar, String frontIdCard,
+			String backIdCard) {
+		this.userId = userId;
+		this.loginId = loginId;
+		this.status = status;
+		this.roleId = roleId;
+		this.lastName = lastName;
+		this.firstName = firstName;
+		this.gender = gender;
+		this.phone = phone;
+		this.email = email;
+		this.dob = dob;
+		this.address = address;
+		this.avatar = avatar;
+		this.frontIdCard = frontIdCard;
+		this.backIdCard = backIdCard;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
 	}
 
 	public long getUserId() {
@@ -49,6 +102,30 @@ public class User extends BaseEntity {
 
 	public void setUserId(long userId) {
 		this.userId = userId;
+	}
+
+	public String getAvatar() {
+		return avatar;
+	}
+
+	public void setAvatar(String avatar) {
+		this.avatar = avatar;
+	}
+
+	public String getFrontIdCard() {
+		return frontIdCard;
+	}
+
+	public void setFrontIdCard(String frontIdCard) {
+		this.frontIdCard = frontIdCard;
+	}
+
+	public String getBackIdCard() {
+		return backIdCard;
+	}
+
+	public void setBackIdCard(String backIdCard) {
+		this.backIdCard = backIdCard;
 	}
 
 	public int getRoleId() {
@@ -83,6 +160,22 @@ public class User extends BaseEntity {
 		this.email = email;
 	}
 
+	public Date getDob() {
+		return dob;
+	}
+
+	public void setDob(Date dob) {
+		this.dob = dob;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
 	public String getLoginId() {
 		return loginId;
 	}
@@ -105,6 +198,14 @@ public class User extends BaseEntity {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+
+	public String getSalt() {
+		return salt;
+	}
+
+	public void setSalt(String salt) {
+		this.salt = salt;
 	}
 
 }
